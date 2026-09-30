@@ -2505,7 +2505,13 @@ export const $ZodUnion: core.$constructor<$ZodUnion> = /*@__PURE__*/ core.$const
         results.push(result);
         async = true;
       } else {
-        if (result.issues.length === 0) return result;
+        if (result.issues.length === 0) {
+          // issues a pipe carried in live on the incoming payload, so answer with it
+          if (payload.issues.length === 0) return result;
+          payload.value = result.value;
+          if (result.memo) payload.memo = true;
+          return payload;
+        }
         results.push(result);
       }
     }

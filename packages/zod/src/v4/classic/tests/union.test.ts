@@ -308,3 +308,17 @@ test("z.discriminatedUnion with empty options constructs and rejects", () => {
     expect((obj.error.issues[0] as any).options).toEqual([]);
   }
 });
+
+test("union keeps an unrecognized key a pipe carries into it", async () => {
+  // a matched option must not drop the issues the pipe forwarded
+  const options = [z.object({ a: z.literal("x") }), z.object({ a: z.string() })] as const;
+  const input = { a: "x", extra: 1 };
+  for (const schema of [
+    z.strictObject({ a: z.string() }).pipe(z.union(options)),
+    z.strictObject({ a: z.string() }).pipe(z.lazy(() => z.union(options))),
+  ]) {
+    expect(schema.safeParse(input).error!.issues.map((i) => i.code)).toEqual(["unrecognized_keys"]);
+    expect((await schema.safeParseAsync(input)).error!.issues.map((i) => i.code)).toEqual(["unrecognized_keys"]);
+  }
+  expect(z.strictObject({ a: z.string() }).pipe(z.union(options)).parse({ a: "x" })).toEqual({ a: "x" });
+});
