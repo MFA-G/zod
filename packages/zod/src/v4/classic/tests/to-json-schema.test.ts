@@ -593,6 +593,27 @@ describe("toJSONSchema", () => {
     `);
   });
 
+  test("includes, startsWith and endsWith emit only a pattern, not a format", () => {
+    expect(z.toJSONSchema(z.string().includes("x"))).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "string",
+      pattern: "x",
+    });
+    expect(z.toJSONSchema(z.string().startsWith("x"))).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "string",
+      pattern: "^x.*",
+    });
+    expect(z.toJSONSchema(z.string().endsWith("x"))).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "string",
+      pattern: ".*x$",
+    });
+
+    // a real format is kept when combined with one of these checks
+    expect(z.toJSONSchema(z.email().startsWith("a"))).toMatchObject({ format: "email" });
+  });
+
   test("includes with position emits a pattern matching runtime semantics", () => {
     // String.prototype.includes(sub, position) matches `sub` at `position` OR
     // LATER, so the JSON Schema pattern must allow >= position leading chars.

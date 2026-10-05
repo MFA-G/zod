@@ -68,6 +68,8 @@ const setFormat = (agg: CheckAggregate, format: string): void => {
   if (format.includes("int")) agg.isInt = true;
 };
 
+const patternOnlyFormats: ReadonlySet<string> = new Set(["includes", "starts_with", "ends_with"]);
+
 type Contributor = (agg: CheckAggregate, def: any) => void;
 const minContributor: Contributor = (agg, def) => narrowMin(agg, "minimum", def.minimum);
 const maxContributor: Contributor = (agg, def) => narrowMax(agg, "maximum", def.maximum);
@@ -93,7 +95,8 @@ const contributors: Record<string, Contributor> = {
   max_size: maxContributor,
   size_equals: (agg, def) => narrowBoth(agg, def.size),
   string_format: (agg, def) => {
-    setFormat(agg, def.format);
+    // these names aren't JSON Schema formats, the pattern carries the constraint
+    if (!patternOnlyFormats.has(def.format)) setFormat(agg, def.format);
     if (def.pattern) addPattern(agg, def.pattern);
     if (def.format === "base64" || def.format === "base64url") agg.contentEncoding = def.format;
     if (def.local || def.precision === -1) agg.laxFormat = true;
